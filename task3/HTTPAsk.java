@@ -48,32 +48,26 @@ public class HTTPAsk {
             System.out.println("Done reading data from client!\n");
 
             // Split the client data at the first empty line, i.e. the end of the header
-            String requestHeader = request.toString().split("\r\n\r\n")[0];
+            String reqHeader = request.toString().split("\r\n\r\n")[0];
 
             System.out.println("------Request Header------");
-            System.out.println(requestHeader);
+            System.out.println(reqHeader);
             System.out.println("----End Request Header----\n");
 
-            String[] requestLineParts = requestHeader.split("\r")[0].split(" ");
-            String reqMethod = requestLineParts[0];
-            String reqPath = requestLineParts[1];
-            String reqVersion = requestLineParts[2];
+            String[] reqLineParts = reqHeader.split("\r")[0].split(" ");
+            String reqMethod = reqLineParts[0];
+            String reqPath = reqLineParts[1];
+            String reqVersion = reqLineParts[2];
 
-            // The server only need to recognize GET request, so we can ignore everything else
+            // Split the path at any of the characters "?", "&" and "="
+            String[] params = reqPath.split("[?&=]");
+
+            // The server only need to recognize GET requests, so we can ignore anything else
             if (!reqMethod.equals("GET")) {
                 serverOutput.write(HTTP_NOT_SUPPORTED.getBytes());
                 connectionSocket.close();
                 return;
             }
-
-            // Split the path at any of the characters ?, & and =
-            String[] params = reqPath.split("[?&=]");
-
-            System.out.println("The request path contains the following parameters:");
-            for (int num = 1; num < params.length; num += 2) {
-                System.out.println(params[num] + "=" + params[num + 1]);
-            }
-            System.out.println(); // Empty line
 
             String hostname = null;
             int port = -1;
@@ -82,9 +76,7 @@ public class HTTPAsk {
             Integer timeout = null;
             Integer limit = null;
 
-            // If params[0] isn't "/ask", i.e. the only resource our server has we have gotten a
-            // request for a resource that we do not have
-            String fullResponse = HTTP_NOT_FOUND;
+            String respToClient;
 
             if (params[0].equals("/ask")) {
                 for (int i = 1; i < params.length; i++) {
@@ -98,34 +90,39 @@ public class HTTPAsk {
                     }
                 }
 
-                TCPClient tcpClient = new TCPClient(shutdown, timeout, limit);
                 System.out.print("TCPClient created with arguments: ");
                 System.out.println(shutdown + " " + timeout + " " + limit);
+                TCPClient tcpClient = new TCPClient(shutdown, timeout, limit);
 
                 if (hostname != null && port != -1 && reqVersion.equals("HTTP/1.1")) {
                     try {
-                        serverResponse = tcpClient.askServer(hostname, port, data);
                         System.out.print("Arguments to TCPClient.askServer: ");
                         System.out.println(hostname + " " + port + " " + new String(data) + "\n");
+                        serverResponse = tcpClient.askServer(hostname, port, data);
 
                         System.out.println("----Response from server----");
                         System.out.println(new String(serverResponse));
                         System.out.println("-------End response---------\n");
-                        fullResponse = HTTP_OK + new String(serverResponse);
+                        respToClient = HTTP_OK + new String(serverResponse);
                     } catch (IOException e) {
-                        fullResponse = HTTP_OK + "There was an error trying to connect to the server " +
+                        respToClient = HTTP_OK + "There was an error trying to connect to the server " +
                                 "given the information you provided, try again.";
                     }
                 }
-                else fullResponse = HTTP_BAD_REQUEST;
+                // If the request path doesn't contain a hostname and/or a portnumber or
+                // if the request version is incorrect it's a bad request
+                else respToClient = HTTP_BAD_REQUEST;
             }
+            // If params[0] isn't "/ask", i.e. the only resource our server has, the
+            // request is for a resource that we do not have
+            else respToClient = HTTP_NOT_FOUND;
 
             System.out.println("-----Response to client-----");
-            System.out.println(fullResponse);
+            System.out.println(respToClient);
             System.out.println("--------End response--------\n");
 
             // Write the response to the client
-            serverOutput.write(fullResponse.getBytes());
+            serverOutput.write(respToClient.getBytes());
 
             // Close the connection socket.
             connectionSocket.close();

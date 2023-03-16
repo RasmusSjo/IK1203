@@ -51,11 +51,14 @@ public class TCPClient {
         // Read the server output one byte at the time
         InputStream clientInputStream = clientSocket.getInputStream();
         int readBytes;
+        // Set the buffer size to 1024 if limit is null, else set it to limit
         byte[] buffer = new byte[limit == null ? 1024 : limit];
         try {
             while ((readBytes = clientInputStream.read(buffer)) != -1) {
                 serverOutput.write(buffer, 0, readBytes);
-                if (readBytes < buffer.length || readBytes == (limit == null ? 0 : limit)) break;
+                // If we have read fewer bytes than the buffer-size we have read all data from the client.
+                // Or if limit != null we always read limit bytes the first time (buffer.length = limit)
+                if (readBytes < buffer.length || limit != null) break;
             }
         } catch (SocketTimeoutException e) {
             // Do nothing, the exception will make us exit the loop

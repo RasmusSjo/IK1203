@@ -1,7 +1,9 @@
-import java.io.*;
-import tcpclient.TCPClientTask1;
+package task1;
 
-public class TCPAskTask1 {
+import java.io.*;
+import task1.tcpclient.TCPClient;
+
+public class TCPAsk {
     /*
      * Usage: explain how to use the program, then exit with failure status
      */
@@ -47,7 +49,7 @@ public class TCPAskTask1 {
         }
 
         try {
-            TCPClientTask1 tcpClient = new TCPClientTask1();
+            TCPClient tcpClient = new TCPClient();
             byte[] serverBytes  = tcpClient.askServer(hostname, port, userInputBytes);
             String serverOutput = new String(serverBytes);
             System.out.printf("%s:%d says:\n%s", hostname, port, serverOutput);

@@ -1,5 +1,7 @@
+package task2;
+
 import java.io.*;
-import tcpclient.TCPClient;
+import task2.tcpclient.TCPClient;
 
 public class TCPAsk {
 	static boolean shutdown = false;             // True if client should shutdown connection

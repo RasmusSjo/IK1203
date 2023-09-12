@@ -1,10 +1,10 @@
-package tcpclient;
+package task1.tcpclient;
 import java.net.*;
 import java.io.*;
 
-public class TCPClientTask1 {
+public class TCPClient {
     
-    public TCPClientTask1() {
+    public TCPClient() {
     }
 
     public byte[] askServer(String hostname, int port) throws IOException {

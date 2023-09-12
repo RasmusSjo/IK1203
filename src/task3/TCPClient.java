@@ -1,33 +1,21 @@
-package tcpclient;
-import java.net.*;
-import java.io.*;
+package task3;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class TCPClient {
 
-    private boolean shutdown;
-    private Integer timeout;
-    private Integer limit;
+    private final boolean shutdown;
+    private final Integer timeout;
+    private final Integer limit;
     
     public TCPClient(boolean shutdown, Integer timeout, Integer limit) {
         this.shutdown = shutdown;
         this.timeout = timeout;
         this.limit = limit;
-    }
-
-    public byte[] askServer(String hostname, int port) throws IOException {
-        // Create a socket and open a connection to the server
-        // with the given hostname and port
-        Socket clientSocket = new Socket(hostname, port);
-
-        ByteArrayOutputStream serverOutputStream = new ByteArrayOutputStream();
-
-        readData(clientSocket, serverOutputStream);
-
-        // Close the stream and the connection to the server
-        serverOutputStream.close();
-        clientSocket.close();
-
-        return serverOutputStream.toByteArray();
     }
 
     public byte[] askServer(String hostname, int port, byte [] toServerBytes) throws IOException {
@@ -57,11 +45,6 @@ public class TCPClient {
     }
 
     private void readData(Socket clientSocket, ByteArrayOutputStream serverOutput) throws IOException {
-        // Counter to keep track of the number of bytes read from the server,
-        // this is only used when the limit is != null
-        int count = 0;
-        int answerLimit = limit == null ? 1 : limit;
-
         // The read operation on the sockets OutputStream will throw an exception if it has to
         // wait longer than "timeout" ms to receive any bytes from the server (timeout = 0 means
         // that the timeout is set to infinity)
@@ -69,20 +52,18 @@ public class TCPClient {
 
         // Read the server output one byte at the time
         InputStream clientInputStream = clientSocket.getInputStream();
-        int temp = 0;
-        while (temp != -1 && count < answerLimit) {
-            try {
-                temp = clientInputStream.read();
-                if (temp != -1) {
-                    serverOutput.write(temp);
-                }
-            } catch (SocketTimeoutException e) {
-                break;
+        int readBytes;
+        // Set the buffer size to 1024 if limit is null, else set it to limit
+        byte[] buffer = new byte[limit == null ? 1024 : limit];
+        try {
+            while ((readBytes = clientInputStream.read(buffer)) != -1) {
+                serverOutput.write(buffer, 0, readBytes);
+                // If we have read fewer bytes than the buffer-size we have read all data from the client
+                // or if limit != null we always read limit bytes the first time (buffer.length = limit)
+                if (readBytes < buffer.length || limit != null) break;
             }
-
-            if (limit != null) {
-                count++;
-            }
+        } catch (SocketTimeoutException e) {
+            // Do nothing, the exception will make us exit the loop
         }
         clientInputStream.close();
     }

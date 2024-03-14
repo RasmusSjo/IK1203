@@ -10,7 +10,7 @@ This introductory networking course covered Internet structure, layered models, 
 
 <a href="https://www.kth.se/student/kurser/kurs/IK1203?periods=6&startterm=20241&l=en">Course information</a>
 
-<h2>Folder structure</h2>
+<h2>Project explaination/folder structure/</h2>
 
 <p>Each folder in the "src" folder corresponds to their respective task in the project. Below is a brief explanation of each of the tasks:</p>
 
